@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Job Listings</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+    }
+    .job-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+    .job-title {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Current Openings</h2>
+  <div id="job-list">Loading jobs...</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://prhsilyjzxbkufchywxt.supabase.co',
+      'YOUR_PUBLIC_ANON_KEY_HERE'
+    );
+
+    async function fetchJobs() {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('title, department, location, expected_ctc_range, joining_months, last_date')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const jobList = document.getElementById('job-list');
+
+      if (error) {
+        jobList.innerHTML = 'Failed to load jobs.';
+        console.error(error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        jobList.innerHTML = 'No job listings found.';
+        return;
+      }
+
+      jobList.innerHTML = '';
+      data.forEach(job => {
+        jobList.innerHTML += `
+          <div class="job-card">
+            <div class="job-title">${job.title}</div>
+            <div class="job-details">
+              <strong>Department:</strong> ${job.department}<br>
+              <strong>Location:</strong> ${job.location}<br>
+              <strong>Expected CTC:</strong> ${job.expected_ctc_range}<br>
+              <strong>Joining Months:</strong> ${job.joining_months || 'N/A'}<br>
+              <strong>Last Date:</strong> ${job.last_date || 'N/A'}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    fetchJobs();
+  </script>
+</body>
+</html>
