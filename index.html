@@ -54,51 +54,109 @@
   <div id="job-list">Loading jobs...</div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.4/dist/umd/supabase.min.js"></script>
   <script>
-    // Initialize Supabase client
-    const supabase = window.supabase.createClient(
-      'https://prhsilyjzxbkufchywxt.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByaHNpbHlqenhia3VmY2h5d3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2NjM5MTEsImV4cCI6MjA1MjIzOTkxMX0.UBvxEhKEMtsRuDWBSDTglfnupKf9fyPI9IvQBxS5F6U'
-    );
+    // Check if Supabase library loaded correctly
+    console.log('Script started');
+    console.log('Supabase library loaded:', typeof window.supabase !== 'undefined');
+    
+    // Initialize Supabase client with error handling
+    let supabase;
+    try {
+      supabase = window.supabase.createClient(
+        'https://prhsilyjzxbkufchywxt.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByaHNpbHlqenhia3VmY2h5d3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2NjM5MTEsImV4cCI6MjA1MjIzOTkxMX0.UBvxEhKEMtsRuDWBSDTglfnupKf9fyPI9IvQBxS5F6U'
+      );
+      console.log('Supabase client created successfully');
+    } catch (e) {
+      console.error('Error initializing Supabase client:', e);
+      document.getElementById('job-list').innerHTML = 
+        '<div style="color: red;">Failed to initialize database connection: ' + e.message + '</div>';
+    }
     
     async function fetchJobs() {
-      // Select only the columns that exist in your database
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('job_id, title, department, description')
-        .order('id', { ascending: false });
+      console.log('fetchJobs function called');
       
-      const jobList = document.getElementById('job-list');
-      
-      if (error) {
-        jobList.innerHTML = '<div style="color: red;">Failed to load jobs. Error: ' + error.message + '</div>';
-        console.error('Error fetching jobs:', error);
-        return;
-      }
-      
-      if (!data || data.length === 0) {
-        jobList.innerHTML = '<div>No job listings found.</div>';
-        return;
-      }
-      
-      // Clear the loading message
-      jobList.innerHTML = '';
-      
-      // Display the jobs
-      data.forEach(job => {
-        // Process the description - assuming it's in <h3>Responsibilities:</h3> format
-        let formattedDescription = job.description || 'No description available';
+      try {
+        console.log('Attempting to connect to Supabase...');
+        console.log('Supabase client initialized:', !!supabase);
         
-        jobList.innerHTML += `
-          <div class="job-card">
-            <div class="job-id">Job ID: ${job.job_id}</div>
-            <div class="job-title">${job.title}</div>
-            <div class="department">${job.department}</div>
-            <div class="job-details">
-              <div class="description">${formattedDescription}</div>
+        // Debug available tables
+        console.log('Querying available tables...');
+        const { data: tableData, error: tableError } = await supabase
+          .from('_tables')
+          .select('*');
+        
+        if (tableError) {
+          console.error('Error querying tables:', tableError);
+        } else {
+          console.log('Available tables:', tableData);
+        }
+        
+        // Try to get all the data from jobs table with minimal selection
+        console.log('Attempting to fetch job records...');
+        
+        // First try with fewer columns
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('*');
+          
+        console.log('Query executed');
+        console.log('Raw response data:', data);
+        console.log('Error:', error);
+      
+        const jobList = document.getElementById('job-list');
+        console.log('Job list element:', jobList);
+        
+        if (error) {
+          console.error('Error details:', error);
+          jobList.innerHTML = '<div style="color: red;">Failed to load jobs. Error: ' + error.message + '</div>';
+          return;
+        }
+        
+        if (!data) {
+          console.log('Data is null or undefined');
+          jobList.innerHTML = '<div>No data returned from the query.</div>';
+          return;
+        }
+        
+        if (data.length === 0) {
+          console.log('Data array is empty');
+          jobList.innerHTML = '<div>No job listings found in the database.</div>';
+          return;
+        }
+        
+        console.log('Number of jobs found:', data.length);
+        console.log('First job record:', data[0]);
+        
+        // Clear the loading message
+        jobList.innerHTML = '';
+        
+        // Display the jobs
+        data.forEach((job, index) => {
+          console.log(`Processing job ${index}:`, job);
+          
+          // Check for expected properties
+          if (!job.title) console.warn(`Job ${index} is missing title`);
+          if (!job.job_id) console.warn(`Job ${index} is missing job_id`);
+          if (!job.department) console.warn(`Job ${index} is missing department`);
+          
+          let formattedDescription = job.description || 'No description available';
+          
+          jobList.innerHTML += `
+            <div class="job-card">
+              <div class="job-id">Job ID: ${job.job_id || 'N/A'}</div>
+              <div class="job-title">${job.title || 'Untitled Position'}</div>
+              <div class="department">${job.department || 'General'}</div>
+              <div class="job-details">
+                <div class="description">${formattedDescription}</div>
+              </div>
             </div>
-          </div>
-        `;
-      });
+          `;
+        });
+      } catch (e) {
+        console.error('Unexpected error in fetchJobs:', e);
+        document.getElementById('job-list').innerHTML = 
+          '<div style="color: red;">An unexpected error occurred: ' + e.message + '</div>';
+      }
     }
     
     // Call the function when the page loads
