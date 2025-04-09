@@ -7,162 +7,154 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 10px;
+      padding: 20px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #eee;
     }
     .job-card {
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 20px;
-      margin-bottom: 15px;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      background-color: #fff;
+    }
+    .job-card:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
     .job-title {
       font-weight: bold;
-      font-size: 1.2em;
+      font-size: 1.3em;
       margin-bottom: 10px;
-      color: #333;
+      color: #2c3e50;
     }
     .job-id {
-      color: #666;
+      color: #7f8c8d;
       font-size: 0.9em;
       margin-bottom: 8px;
     }
     .job-details {
-      line-height: 1.5;
+      line-height: 1.6;
     }
-    .department {
-      background-color: #f0f7ff;
+    .tag {
       display: inline-block;
-      padding: 3px 8px;
-      border-radius: 4px;
+      padding: 4px 8px;
+      margin-right: 8px;
       margin-bottom: 8px;
+      background-color: #e0f2f1;
+      color: #00796b;
+      border-radius: 4px;
+      font-size: 0.9em;
     }
-    .description {
-      margin-top: 10px;
-      color: #555;
-    }
-    h2 {
+    #error-message {
+      color: #e74c3c;
+      padding: 10px;
+      background-color: #fdeaea;
+      border-radius: 4px;
       margin-bottom: 20px;
-      color: #333;
-      border-bottom: 2px solid #eee;
-      padding-bottom: 10px;
+      display: none;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #7f8c8d;
     }
   </style>
 </head>
 <body>
   <h2>Current Openings</h2>
-  <div id="job-list">Loading jobs...</div>
+  <div id="error-message"></div>
+  <div id="job-list" class="loading">Loading jobs...</div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.4/dist/umd/supabase.min.js"></script>
   <script>
-    // Check if Supabase library loaded correctly
-    console.log('Script started');
-    console.log('Supabase library loaded:', typeof window.supabase !== 'undefined');
-    
-    // Initialize Supabase client with error handling
-    let supabase;
-    try {
-      supabase = window.supabase.createClient(
-        'https://prhsilyjzxbkufchywxt.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByaHNpbHlqenhia3VmY2h5d3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2NjM5MTEsImV4cCI6MjA1MjIzOTkxMX0.UBvxEhKEMtsRuDWBSDTglfnupKf9fyPI9IvQBxS5F6U'
-      );
-      console.log('Supabase client created successfully');
-    } catch (e) {
-      console.error('Error initializing Supabase client:', e);
-      document.getElementById('job-list').innerHTML = 
-        '<div style="color: red;">Failed to initialize database connection: ' + e.message + '</div>';
-    }
-    
-    async function fetchJobs() {
-      console.log('fetchJobs function called');
+    document.addEventListener('DOMContentLoaded', function() {
+      const errorBox = document.getElementById('error-message');
+      const jobList = document.getElementById('job-list');
       
       try {
-        console.log('Attempting to connect to Supabase...');
-        console.log('Supabase client initialized:', !!supabase);
+        // Initialize Supabase client
+        const supabaseUrl = 'https://prhsilyjzxbkufchywxt.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByaHNpbHlqenhia3VmY2h5d3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2NjM5MTEsImV4cCI6MjA1MjIzOTkxMX0.UBvxEhKEMtsRuDWBSDTglfnupKf9fyPI9IvQBxS5F6U';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
         
-        // Debug available tables
-        console.log('Querying available tables...');
-        const { data: tableData, error: tableError } = await supabase
-          .from('_tables')
-          .select('*');
-        
-        if (tableError) {
-          console.error('Error querying tables:', tableError);
-        } else {
-          console.log('Available tables:', tableData);
-        }
-        
-        // Try to get all the data from jobs table with minimal selection
-        console.log('Attempting to fetch job records...');
-        
-        // First try with fewer columns
-        const { data, error } = await supabase
-          .from('jobs')
-          .select('*');
+        // Check if Supabase jobs table exists
+        async function checkJobs() {
+          // Try to directly query the jobs table to bypass system tables access issues
+          const { data, error } = await supabase
+            .from('jobs')
+            .select('id, job_id, title, department, description, location, is_internship, expected_ctc_range, is_active, joining_months')
+            .eq('is_active', true)
+            .limit(10);
+            
+          if (error) {
+            console.error('Error fetching jobs:', error);
+            errorBox.style.display = 'block';
+            errorBox.textContent = `Error loading jobs: ${error.message}`;
+            jobList.innerHTML = 'Could not load job listings. Please try again later.';
+            return;
+          }
           
-        console.log('Query executed');
-        console.log('Raw response data:', data);
-        console.log('Error:', error);
-      
-        const jobList = document.getElementById('job-list');
-        console.log('Job list element:', jobList);
-        
-        if (error) {
-          console.error('Error details:', error);
-          jobList.innerHTML = '<div style="color: red;">Failed to load jobs. Error: ' + error.message + '</div>';
-          return;
-        }
-        
-        if (!data) {
-          console.log('Data is null or undefined');
-          jobList.innerHTML = '<div>No data returned from the query.</div>';
-          return;
-        }
-        
-        if (data.length === 0) {
-          console.log('Data array is empty');
-          jobList.innerHTML = '<div>No job listings found in the database.</div>';
-          return;
-        }
-        
-        console.log('Number of jobs found:', data.length);
-        console.log('First job record:', data[0]);
-        
-        // Clear the loading message
-        jobList.innerHTML = '';
-        
-        // Display the jobs
-        data.forEach((job, index) => {
-          console.log(`Processing job ${index}:`, job);
+          if (!data || data.length === 0) {
+            jobList.innerHTML = 'No job listings found in the database.';
+            return;
+          }
           
-          // Check for expected properties
-          if (!job.title) console.warn(`Job ${index} is missing title`);
-          if (!job.job_id) console.warn(`Job ${index} is missing job_id`);
-          if (!job.department) console.warn(`Job ${index} is missing department`);
+          // Create job cards
+          jobList.innerHTML = '';
+          jobList.classList.remove('loading');
           
-          let formattedDescription = job.description || 'No description available';
-          
-          jobList.innerHTML += `
-            <div class="job-card">
-              <div class="job-id">Job ID: ${job.job_id || 'N/A'}</div>
-              <div class="job-title">${job.title || 'Untitled Position'}</div>
-              <div class="department">${job.department || 'General'}</div>
-              <div class="job-details">
-                <div class="description">${formattedDescription}</div>
+          data.forEach(job => {
+            const card = document.createElement('div');
+            card.className = 'job-card';
+            
+            // Required fields
+            const title = job.title || 'Untitled Position';
+            const department = job.department || 'Unspecified Department';
+            const jobId = job.job_id || 'No ID';
+            
+            // Optional fields with defaults
+            const description = job.description || 'No description available';
+            const location = job.location || 'Remote/Flexible';
+            const isInternship = job.is_internship !== null ? job.is_internship : false;
+            const ctcRange = job.expected_ctc_range || 'Competitive';
+            const joiningMonths = job.joining_months || 'Immediate';
+            
+            card.innerHTML = `
+              <div class="job-id">Job ID: ${jobId}</div>
+              <div class="job-title">${title}</div>
+              <div>
+                <span class="tag">${department}</span>
+                <span class="tag">${location}</span>
+                ${isInternship ? '<span class="tag">Internship</span>' : ''}
               </div>
-            </div>
-          `;
-        });
+              <div class="job-details">
+                <p>${description}</p>
+                <p><strong>Expected CTC:</strong> ${ctcRange}</p>
+                <p><strong>Joining Period:</strong> ${joiningMonths}</p>
+              </div>
+            `;
+            
+            jobList.appendChild(card);
+          });
+        }
+        
+        // Call the function to check and display jobs
+        checkJobs();
+        
       } catch (e) {
-        console.error('Unexpected error in fetchJobs:', e);
-        document.getElementById('job-list').innerHTML = 
-          '<div style="color: red;">An unexpected error occurred: ' + e.message + '</div>';
+        console.error('Unexpected error:', e);
+        errorBox.style.display = 'block';
+        errorBox.textContent = `An unexpected error occurred: ${e.message}`;
+        jobList.innerHTML = 'Could not load job listings due to an error.';
       }
-    }
-    
-    // Call the function when the page loads
-    document.addEventListener('DOMContentLoaded', fetchJobs);
-    // Also call it immediately in case the DOM is already loaded
-    fetchJobs();
+    });
   </script>
 </body>
 </html>
