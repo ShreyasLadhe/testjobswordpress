@@ -12,65 +12,98 @@
     .job-card {
       border: 1px solid #ddd;
       border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 10px;
+      padding: 20px;
+      margin-bottom: 15px;
       box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
     .job-title {
       font-weight: bold;
       font-size: 1.2em;
-      margin-bottom: 5px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .job-id {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 8px;
+    }
+    .job-details {
+      line-height: 1.5;
+    }
+    .department {
+      background-color: #f0f7ff;
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .description {
+      margin-top: 10px;
+      color: #555;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
     }
   </style>
 </head>
 <body>
   <h2>Current Openings</h2>
   <div id="job-list">Loading jobs...</div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.4/dist/umd/supabase.min.js"></script>
   <script>
+    // Initialize Supabase client
     const supabase = window.supabase.createClient(
       'https://prhsilyjzxbkufchywxt.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByaHNpbHlqenhia3VmY2h5d3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2NjM5MTEsImV4cCI6MjA1MjIzOTkxMX0.UBvxEhKEMtsRuDWBSDTglfnupKf9fyPI9IvQBxS5F6U'
     );
-
+    
     async function fetchJobs() {
+      // Select only the columns that exist in your database
       const { data, error } = await supabase
         .from('jobs')
-        .select('title, department, location, expected_ctc_range, joining_months, last_date')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
+        .select('job_id, title, department, description')
+        .order('id', { ascending: false });
+      
       const jobList = document.getElementById('job-list');
-
+      
       if (error) {
-        jobList.innerHTML = 'Failed to load jobs.';
-        console.error(error);
+        jobList.innerHTML = '<div style="color: red;">Failed to load jobs. Error: ' + error.message + '</div>';
+        console.error('Error fetching jobs:', error);
         return;
       }
-
+      
       if (!data || data.length === 0) {
-        jobList.innerHTML = 'No job listings found.';
+        jobList.innerHTML = '<div>No job listings found.</div>';
         return;
       }
-
+      
+      // Clear the loading message
       jobList.innerHTML = '';
+      
+      // Display the jobs
       data.forEach(job => {
+        // Process the description - assuming it's in <h3>Responsibilities:</h3> format
+        let formattedDescription = job.description || 'No description available';
+        
         jobList.innerHTML += `
           <div class="job-card">
+            <div class="job-id">Job ID: ${job.job_id}</div>
             <div class="job-title">${job.title}</div>
+            <div class="department">${job.department}</div>
             <div class="job-details">
-              <strong>Department:</strong> ${job.department}<br>
-              <strong>Location:</strong> ${job.location}<br>
-              <strong>Expected CTC:</strong> ${job.expected_ctc_range}<br>
-              <strong>Joining Months:</strong> ${job.joining_months || 'N/A'}<br>
-              <strong>Last Date:</strong> ${job.last_date || 'N/A'}
+              <div class="description">${formattedDescription}</div>
             </div>
           </div>
         `;
       });
     }
-
+    
+    // Call the function when the page loads
+    document.addEventListener('DOMContentLoaded', fetchJobs);
+    // Also call it immediately in case the DOM is already loaded
     fetchJobs();
   </script>
 </body>
