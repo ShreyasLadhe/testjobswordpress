@@ -10,37 +10,34 @@
   <main class="mt-8 px-4 max-w-6xl mx-auto" id="job-list">
     <p class="text-center text-gray-600">Loading job listings...</p>
   </main>
-
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
-
   <script>
     const SUPABASE_URL = 'https://prhsilyjzxbkufchywxt.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByaHNpbHlqenhia3VmY2h5d3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2NjM5MTEsImV4cCI6MjA1MjIzOTkxMX0.UBvxEhKEMtsRuDWBSDTglfnupKf9fyPI9IvQBxS5F6U';
-
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    
     async function fetchJobs() {
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
         .order('created_at', { ascending: false });
-
+        
       const jobContainer = document.getElementById('job-list');
       jobContainer.innerHTML = '';
-
+      
       if (error) {
         console.error('Error fetching jobs:', error.message);
         jobContainer.innerHTML = `<p class="text-center text-red-500">Failed to load job listings.</p>`;
         return;
       }
-
+      
       if (data.length === 0) {
         jobContainer.innerHTML = `<p class="text-center text-gray-500">No job listings available right now.</p>`;
         return;
       }
-
-      const jobsHTML = data.map((job) => {
+      
+      const jobsHTML = data.map((job, index) => {
         return `
           <div class="bg-white rounded-2xl shadow-md p-6 w-full mb-6 transition hover:shadow-lg">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
@@ -49,44 +46,85 @@
                 ${job.department}
               </span>
             </div>
-            <div class="mt-3 text-gray-700">
-              ${job.description}
+            
+            <!-- Hidden content that will be shown on "View More" -->
+            <div id="job-details-${index}" class="hidden">
+              <div class="mt-3 text-gray-700">
+                ${job.description}
+              </div>
+              <div class="mt-4 grid gap-2 sm:grid-cols-2 text-sm text-gray-600">
+                <p><strong>Location:</strong> ${job.location || 'Not specified'}</p>
+                <p><strong>CTC:</strong> ${job.expected_ctc_range || 'Not specified'}</p>
+                <p><strong>Type:</strong> ${job.joining_type || 'N/A'}</p>
+                <p><strong>Duration:</strong> ${job.duration_months || 'N/A'} months</p>
+                <p>
+                  <strong>Internship:</strong>
+                  <span class="inline-block px-2 py-0.5 rounded text-white ${job.is_internship ? 'bg-green-500' : 'bg-gray-400'}">
+                    ${job.is_internship ? 'Yes' : 'No'}
+                  </span>
+                </p>
+              </div>
+              <div class="mt-4">
+                <a
+                  href="${job.application_link}"
+                  target="_blank"
+                  class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition"
+                >
+                  Apply Now
+                </a>
+              </div>
             </div>
-            <div class="mt-4 grid gap-2 sm:grid-cols-2 text-sm text-gray-600">
-              <p><strong>Location:</strong> ${job.location || 'Not specified'}</p>
-              <p><strong>CTC:</strong> ${job.expected_ctc_range || 'Not specified'}</p>
-              <p><strong>Type:</strong> ${job.joining_type || 'N/A'}</p>
-              <p><strong>Duration:</strong> ${job.duration_months || 'N/A'} months</p>
-              <p>
-                <strong>Internship:</strong> 
-                <span class="inline-block px-2 py-0.5 rounded text-white ${job.is_internship ? 'bg-green-500' : 'bg-gray-400'}">
-                  ${job.is_internship ? 'Yes' : 'No'}
-                </span>
-              </p>
-            </div>
-            <div class="mt-4">
-              <a 
-                href="${job.application_link}" 
-                target="_blank" 
-                class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-md transition"
-              >
-                Apply Now
-              </a>
-            </div>
+            
+            <!-- View More / View Less Button -->
+            <button 
+              onclick="toggleJobDetails(${index})" 
+              id="toggle-btn-${index}" 
+              class="mt-4 text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center"
+            >
+              <span>View More</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
             <p class="mt-4 text-xs text-gray-400">Posted on: ${new Date(job.created_at).toLocaleDateString()}</p>
           </div>
         `;
       }).join('');
-
+      
       jobContainer.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           ${jobsHTML}
         </div>
       `;
     }
-
+    
+    function toggleJobDetails(index) {
+      const detailsElement = document.getElementById(`job-details-${index}`);
+      const toggleButton = document.getElementById(`toggle-btn-${index}`);
+      
+      if (detailsElement.classList.contains('hidden')) {
+        // Show details
+        detailsElement.classList.remove('hidden');
+        toggleButton.innerHTML = `
+          <span>View Less</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+          </svg>
+        `;
+      } else {
+        // Hide details
+        detailsElement.classList.add('hidden');
+        toggleButton.innerHTML = `
+          <span>View More</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        `;
+      }
+    }
+    
     document.addEventListener('DOMContentLoaded', fetchJobs);
   </script>
 </body>
 </html>
-
