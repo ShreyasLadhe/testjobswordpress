@@ -58,7 +58,7 @@
             <div class="mt-4 grid gap-2 sm:grid-cols-2 text-sm text-gray-600">
               <p><strong>Location:</strong> ${job.location || 'Not specified'}</p>
               <p><strong>CTC:</strong> ${job.expected_ctc_range || 'Not specified'}</p>
-              <p><strong>Type:</strong> ${job.joining_type || 'N/A'}</p>
+              <p><strong>Type:</strong> ${job.joining_type ? job.joining_type.charAt(0).toUpperCase() + job.joining_type.slice(1) : 'N/A'}</p>
               <p><strong>Duration:</strong> ${job.duration_months || 'N/A'} months</p>
               <p>
                 <strong>Internship:</strong>
