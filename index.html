@@ -21,6 +21,7 @@
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
+        .eq('is_active', true)  // Only fetch active job listings
         .order('created_at', { ascending: false });
         
       const jobContainer = document.getElementById('job-list');
@@ -33,7 +34,7 @@
       }
       
       if (data.length === 0) {
-        jobContainer.innerHTML = `<p class="text-center text-gray-500">No job listings available right now.</p>`;
+        jobContainer.innerHTML = `<p class="text-center text-gray-500">No active job listings available right now.</p>`;
         return;
       }
       
