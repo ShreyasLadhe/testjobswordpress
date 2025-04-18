@@ -11,11 +11,11 @@
     <p class="text-center text-gray-600">Loading job listings...</p>
   </main>
   <!-- Supabase JS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase/2.39.3/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://prhsilyjzxbkufchywxt.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByaHNpbHlqenhia3VmY2h5d3h0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2NjM5MTEsImV4cCI6MjA1MjIzOTkxMX0.UBvxEhKEMtsRuDWBSDTglfnupKf9fyPI9IvQBxS5F6U';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
     async function fetchJobs() {
       const { data, error } = await supabase
