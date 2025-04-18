@@ -5,6 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Job Listings | F13 HRMS</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .job-description ul {
+      list-style-type: disc;
+      margin-left: 1.5rem;
+    }
+    .job-description li {
+      margin-bottom: 0.5rem;
+      position: relative;
+      padding-left: 0.25rem;
+    }
+    .job-description li strong {
+      font-weight: 600;
+    }
+    .job-description h3 {
+      margin-top: 1rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 font-sans">
   <main class="mt-8 px-4 max-w-6xl mx-auto" id="job-list">
@@ -53,7 +73,7 @@
             
             <!-- Job description (hidden by default) -->
             <div id="job-details-${index}" class="hidden">
-              <div class="mt-3 text-gray-700">
+              <div class="mt-3 text-gray-700 job-description">
                 ${formattedDescription}
               </div>
             </div>
