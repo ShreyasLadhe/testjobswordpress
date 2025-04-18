@@ -113,60 +113,91 @@
     function formatDescription(description) {
       if (!description) return '';
       
-      // Format sections with headers and bullet points
-      const sections = [
-        { header: "Key Responsibilities:", keyword: "Key Responsibilities:" },
-        { header: "What We're Looking For:", keyword: "What We're Looking For:" },
-        { header: "Why Join Us?", keyword: "Why Join Us?" }
-      ];
+      // Split the description into paragraphs based on common job description headers
+      const headerRegex = /(About the Role:|Key Responsibilities:|Creative Copywriting:|Official Communications:|Trend & Sentiment Analysis:|Collaboration:|Audience Engagement:|What We're Looking For:|Why Join Us?)/g;
       
+      // Replace paragraphs with HTML-formatted structure
       let formattedText = description;
       
-      // Process the description for each section
-      sections.forEach(section => {
-        if (formattedText.includes(section.keyword)) {
-          const regex = new RegExp(`${section.keyword}(.*?)(?=(${sections.map(s => s.keyword).join('|')})|$)`, 's');
-          const match = formattedText.match(regex);
-          
-          if (match && match[1]) {
-            // Get the section content
-            let sectionContent = match[1].trim();
-            
-            // Convert lines that look like list items into bullet points
-            const bulletItems = sectionContent.split(/\n/).map(line => {
-              line = line.trim();
-              if (line) {
-                // Check if it already starts with a bullet or number
-                if (!/^[•\-\*\d]/.test(line)) {
-                  return `<li class="ml-5 list-disc my-1">${line}</li>`;
-                } else {
-                  // It already has some kind of bullet, format it consistently
-                  return `<li class="ml-5 list-disc my-1">${line.replace(/^[•\-\*\d]+\.?\s*/, '')}</li>`;
-                }
-              }
-              return '';
-            }).filter(item => item !== '');
-            
-            // Create the formatted section with header and bullet points
-            const formattedSection = `
-              <h3 class="font-semibold text-lg mt-4 mb-2">${section.header}</h3>
-              <ul class="list-disc">
-                ${bulletItems.join('')}
-              </ul>
-            `;
-            
-            // Replace the original section text with formatted HTML
-            formattedText = formattedText.replace(regex, section.keyword + formattedSection);
-          }
-        }
-      });
-      
-      // Handle the introduction paragraph
-      const introMatch = formattedText.match(/^(.*?)(?=Key Responsibilities:)/s);
+      // Format the introduction paragraph
+      const introRegex = /^(.*?)(?=About the Role:|Key Responsibilities:)/s;
+      const introMatch = formattedText.match(introRegex);
       if (introMatch && introMatch[1]) {
         const introParagraph = `<p class="mb-4">${introMatch[1].trim()}</p>`;
         formattedText = formattedText.replace(introMatch[1], introParagraph);
       }
+      
+      // Create specific patterns for each section
+      const sectionPatterns = [
+        {
+          sectionHeader: "Key Responsibilities:",
+          pattern: /(Content Creation:|Creative Copywriting:|Official Communications:|Trend & Sentiment Analysis:|Collaboration:|Audience Engagement:)([^:]+)(?=Content Creation:|Creative Copywriting:|Official Communications:|Trend & Sentiment Analysis:|Collaboration:|Audience Engagement:|What We're Looking For:|$)/g,
+          replacer: function(match, itemHeader, content) {
+            return `<li class="mb-2"><strong>${itemHeader}</strong>${content}</li>`;
+          }
+        },
+        {
+          sectionHeader: "What We're Looking For:",
+          pattern: /(Exceptional English writing skills|Experience in|Strong understanding|Ability to balance|Familiarity with)([^:]+?)(?=Exceptional English writing skills|Experience in|Strong understanding|Ability to balance|Familiarity with|Why Join Us?|$)/g,
+          replacer: function(match, itemHeader, content) {
+            return `<li class="mb-2"><strong>${itemHeader}</strong>${content}</li>`;
+          }
+        }
+      ];
+
+      // First, add the section headers with proper HTML formatting
+      formattedText = formattedText
+        .replace(/Key Responsibilities:/g, '<h3 class="font-semibold text-lg mt-4 mb-2">Key Responsibilities:</h3><ul class="list-disc pl-5">')
+        .replace(/What We're Looking For:/g, '</ul><h3 class="font-semibold text-lg mt-4 mb-2">What We\'re Looking For:</h3><ul class="list-disc pl-5">')
+        .replace(/Why Join Us\?/g, '</ul><h3 class="font-semibold text-lg mt-4 mb-2">Why Join Us?</h3><ul class="list-disc pl-5">');
+
+      // Process each bullet point pattern
+      formattedText = formattedText
+        // Content Creation item
+        .replace(/Content Creation:([^:]+?)(?=Creative Copywriting:|$)/g, 
+          '<li class="mb-2"><strong>Content Creation:</strong>$1</li>')
+        // Creative Copywriting item
+        .replace(/Creative Copywriting:([^:]+?)(?=Official Communications:|$)/g, 
+          '<li class="mb-2"><strong>Creative Copywriting:</strong>$1</li>')
+        // Official Communications item
+        .replace(/Official Communications:([^:]+?)(?=Trend & Sentiment Analysis:|$)/g, 
+          '<li class="mb-2"><strong>Official Communications:</strong>$1</li>')
+        // Trend & Sentiment Analysis item
+        .replace(/Trend & Sentiment Analysis:([^:]+?)(?=Collaboration:|$)/g, 
+          '<li class="mb-2"><strong>Trend & Sentiment Analysis:</strong>$1</li>')
+        // Collaboration item
+        .replace(/Collaboration:([^:]+?)(?=Audience Engagement:|$)/g, 
+          '<li class="mb-2"><strong>Collaboration:</strong>$1</li>')
+        // Audience Engagement item
+        .replace(/Audience Engagement:([^:]+?)(?=What We're Looking For:|$)/g, 
+          '<li class="mb-2"><strong>Audience Engagement:</strong>$1</li>')
+        // What We're Looking For items
+        .replace(/Exceptional English writing skills([^:]+?)(?=Experience in|$)/g, 
+          '<li class="mb-2"><strong>Exceptional English writing skills</strong>$1</li>')
+        .replace(/Experience in([^:]+?)(?=Strong understanding|$)/g, 
+          '<li class="mb-2"><strong>Experience in</strong>$1</li>')
+        .replace(/Strong understanding([^:]+?)(?=Ability to balance|$)/g, 
+          '<li class="mb-2"><strong>Strong understanding</strong>$1</li>')
+        .replace(/Ability to balance([^:]+?)(?=Familiarity with|$)/g, 
+          '<li class="mb-2"><strong>Ability to balance</strong>$1</li>')
+        .replace(/Familiarity with([^:]+?)(?=Why Join Us\?|$)/g, 
+          '<li class="mb-2"><strong>Familiarity with</strong>$1</li>')
+        // Why Join Us items
+        .replace(/Work on a([^:•]+?)(?=Gain hands-on|$)/g, 
+          '<li class="mb-2">Work on a$1</li>')
+        .replace(/Gain hands-on([^:•]+?)(?=Be part of|$)/g, 
+          '<li class="mb-2">Gain hands-on$1</li>')
+        .replace(/Be part of([^:•]+?)(?=$)/g, 
+          '<li class="mb-2">Be part of$1</li>');
+
+      // Add closing ul tag if needed
+      if (!formattedText.endsWith('</ul>')) {
+        formattedText += '</ul>';
+      }
+      
+      // Ensure all paragraph text is wrapped properly
+      formattedText = formattedText.replace(/(About the Role:)([^<]+)(?=<h3|$)/g, 
+        '<h3 class="font-semibold text-lg mt-4 mb-2">$1</h3><p class="mb-4">$2</p>');
       
       return formattedText;
     }
